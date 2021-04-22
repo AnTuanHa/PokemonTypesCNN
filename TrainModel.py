@@ -90,6 +90,10 @@ test_ds = configure_for_performance(test_ds, is_test_dataset=True)
 
 model = models.Sequential()
 model.add(layers.experimental.preprocessing.Rescaling(1./255, input_shape=(IMG_WIDTH, IMG_HEIGHT, IMG_DEPTH)))
+model.add(layers.experimental.preprocessing.RandomFlip("horizontal")),
+model.add(layers.experimental.preprocessing.RandomRotation(0.1)),
+model.add(layers.experimental.preprocessing.RandomTranslation(0.1, 0.1)),
+
 model.add(layers.Conv2D(filters=32, kernel_size=(3, 3), padding="same", activation='relu'))
 model.add(layers.MaxPooling2D((2, 2), strides=2, padding="valid"))
 model.add(layers.Conv2D(filters=64, kernel_size=(3, 3), padding="same", activation='relu'))
