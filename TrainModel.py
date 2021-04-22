@@ -8,6 +8,7 @@ from pathlib import Path
 
 DATASET_PATH = "dataset"
 
+LEARNING_RATE=0.001
 EPOCHS = 5
 BATCH_SIZE = 32
 IMG_WIDTH = 32
@@ -102,7 +103,7 @@ model.add(layers.Dropout(0.50))
 model.add(layers.Dense(NUM_CLASSES))
 model.summary()
 
-model.compile(optimizer='adam',
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
