@@ -8,8 +8,9 @@ from pathlib import Path
 
 DATASET_PATH = "dataset"
 
-LEARNING_RATE=0.001
-EPOCHS = 5
+LEARNING_RATE = 0.001
+EARLY_STOPPING_THRESHOLD = 100
+EPOCHS = 10000
 BATCH_SIZE = 32
 IMG_WIDTH = 32
 IMG_HEIGHT = 32
@@ -111,7 +112,8 @@ model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-history = model.fit(train_ds, validation_data=val_ds, epochs=EPOCHS)
+callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=EARLY_STOPPING_THRESHOLD, restore_best_weights=True)
+history = model.fit(train_ds, validation_data=val_ds, epochs=EPOCHS, callbacks=[callback])
 
 test_loss, test_acc = model.evaluate(test_ds)
 print(f"Accuracy: {test_acc}\tLoss: {test_loss}")
