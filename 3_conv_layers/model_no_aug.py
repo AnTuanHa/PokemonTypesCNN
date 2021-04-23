@@ -8,7 +8,7 @@ from pathlib import Path
 
 DATASET_PATH = "../dataset"
 
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 EARLY_STOPPING_THRESHOLD = 50
 EPOCHS = 10000
 BATCH_SIZE = 256
@@ -116,7 +116,8 @@ callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=EARLY_S
 history = model.fit(train_ds, validation_data=val_ds, epochs=EPOCHS, callbacks=[callback])
 
 test_loss, test_acc = model.evaluate(test_ds)
-print(f"Accuracy: {test_acc}\tLoss: {test_loss}")
+test_acc_loss = f"Accuracy: {test_acc}\tLoss: {test_loss}\n"
+print(test_acc_loss)
 
 filename = os.path.basename(__file__).split(".")[0]
 
@@ -126,6 +127,10 @@ results_dir = filename + '_results/'
 
 if not os.path.isdir(results_dir):
     os.makedirs(results_dir)
+
+f = open(results_dir + "test_results.txt", "w")
+f.write(test_acc_loss)
+f.close()
 
 plt.plot(history.history['accuracy'], label='training accuracy')
 plt.plot(history.history['val_accuracy'], label = 'validation accuracy')
