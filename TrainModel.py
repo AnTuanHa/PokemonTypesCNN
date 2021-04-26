@@ -6,35 +6,39 @@ import os
 from tensorflow.keras import layers, models
 from pathlib import Path
 
-DATASET_PATH = "dataset"
+TRAIN_DATASET_PATH = "train_dataset"
+TEST_DATASET_PATH = "test_dataset"
 
 LEARNING_RATE = 0.001
-EARLY_STOPPING_THRESHOLD = 100
+EARLY_STOPPING_THRESHOLD = 200
 EPOCHS = 10000
-BATCH_SIZE = 32
+BATCH_SIZE = 256
 IMG_WIDTH = 32
 IMG_HEIGHT = 32
 IMG_DEPTH = 3
 
-data_dir = Path(DATASET_PATH)
+train_data_dir = Path(TRAIN_DATASET_PATH)
 
-list_ds = tf.data.Dataset.list_files(str(data_dir / "*/*"), shuffle=False)
-DATASET_SIZE = list_ds.cardinality().numpy() # Returns the total number of images found in the dataset folder
+list_ds = tf.data.Dataset.list_files(str(train_data_dir / "*/*"), shuffle=False)
+DATASET_SIZE = (list_ds.cardinality().numpy())  # Returns the total number of images found in the train_dataset folder
 
 class_names = np.array(
-    sorted([item.name for item in data_dir.glob("*") if item.name != "LICENSE.txt"])
+    sorted(
+        [item.name for item in train_data_dir.glob("*") if item.name != "LICENSE.txt"]
+    )
 )
 NUM_CLASSES = len(class_names)
 
-TRAIN_SIZE = int(0.70 * DATASET_SIZE)
-VAL_SIZE = int(0.15 * DATASET_SIZE)
-TEST_SIZE = int(0.15 * DATASET_SIZE)
+TRAIN_SIZE = int(0.85 * DATASET_SIZE)
 
 list_ds = list_ds.shuffle(DATASET_SIZE, reshuffle_each_iteration=False)
 train_ds = list_ds.take(TRAIN_SIZE)
-test_ds = list_ds.skip(TRAIN_SIZE)
-val_ds = test_ds.take(VAL_SIZE)
-test_ds = test_ds.skip(VAL_SIZE)
+val_ds = list_ds.skip(TRAIN_SIZE)
+
+test_data_dir = Path(TEST_DATASET_PATH)
+
+test_ds = tf.data.Dataset.list_files(str(test_data_dir / "*/*"), shuffle=False)
+TEST_SIZE = (test_ds.cardinality().numpy())  # Returns the total number of images found in the test_dataset folder
 
 
 def get_label(file_path):
@@ -89,51 +93,146 @@ train_ds = configure_for_performance(train_ds)
 val_ds = configure_for_performance(val_ds)
 test_ds = configure_for_performance(test_ds, is_test_dataset=True)
 
-model = models.Sequential()
-model.add(layers.experimental.preprocessing.Rescaling(1./255, input_shape=(IMG_WIDTH, IMG_HEIGHT, IMG_DEPTH)))
-model.add(layers.experimental.preprocessing.RandomFlip("horizontal")),
-model.add(layers.experimental.preprocessing.RandomRotation(0.1)),
-model.add(layers.experimental.preprocessing.RandomTranslation(0.1, 0.1)),
+weight_decay = 0.0001
 
-model.add(layers.Conv2D(filters=32, kernel_size=(3, 3), padding="same", activation='relu'))
+model = models.Sequential()
+model.add(
+    layers.experimental.preprocessing.Rescaling(
+        1.0 / 255, input_shape=(IMG_WIDTH, IMG_HEIGHT, IMG_DEPTH)
+    )
+)
+model.add(layers.experimental.preprocessing.RandomFlip("horizontal"))
+model.add(layers.experimental.preprocessing.RandomTranslation(0.1, 0.1))
+model.add(layers.experimental.preprocessing.RandomZoom(0.1))
+
+model.add(layers.BatchNormalization())
+model.add(
+    layers.Conv2D(
+        filters=32,
+        kernel_size=(3, 3),
+        padding="same",
+        kernel_regularizer=tf.keras.regularizers.L2(l2=weight_decay),
+        activation="relu",
+    )
+)
+model.add(layers.BatchNormalization())
+model.add(
+    layers.Conv2D(
+        filters=32,
+        kernel_size=(3, 3),
+        padding="same",
+        kernel_regularizer=tf.keras.regularizers.L2(l2=weight_decay),
+        activation="relu",
+    )
+)
+model.add(layers.BatchNormalization())
 model.add(layers.MaxPooling2D((2, 2), strides=2, padding="valid"))
-model.add(layers.Conv2D(filters=64, kernel_size=(3, 3), padding="same", activation='relu'))
+model.add(layers.Dropout(0.20))
+
+model.add(
+    layers.Conv2D(
+        filters=64,
+        kernel_size=(3, 3),
+        padding="same",
+        kernel_regularizer=tf.keras.regularizers.L2(l2=weight_decay),
+        activation="relu",
+    )
+)
+model.add(layers.BatchNormalization())
+model.add(
+    layers.Conv2D(
+        filters=64,
+        kernel_size=(3, 3),
+        padding="same",
+        kernel_regularizer=tf.keras.regularizers.L2(l2=weight_decay),
+        activation="relu",
+    )
+)
+model.add(layers.BatchNormalization())
 model.add(layers.MaxPooling2D((2, 2), strides=2, padding="valid"))
-model.add(layers.Conv2D(filters=128, kernel_size=(3, 3), padding="same", activation='relu'))
-model.add(layers.MaxPooling2D((2, 2), strides=2, padding="valid"))
+model.add(layers.Dropout(0.30))
+
+model.add(
+    layers.Conv2D(
+        filters=128,
+        kernel_size=(3, 3),
+        padding="same",
+        kernel_regularizer=tf.keras.regularizers.L2(l2=weight_decay),
+        activation="relu",
+    )
+)
+model.add(layers.BatchNormalization())
+model.add(
+    layers.Conv2D(
+        filters=128,
+        kernel_size=(3, 3),
+        padding="same",
+        kernel_regularizer=tf.keras.regularizers.L2(l2=weight_decay),
+        activation="relu",
+    )
+)
+model.add(layers.BatchNormalization())
+model.add(layers.Dropout(0.40))
 
 model.add(layers.Flatten())
-model.add(layers.Dense(128, activation='relu'))
-model.add(layers.Dropout(0.50))
-model.add(layers.Dense(NUM_CLASSES))
+model.add(layers.Dense(NUM_CLASSES, activation="softmax"))
 model.summary()
 
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+    metrics=["sparse_categorical_accuracy"],
+)
 
-callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=EARLY_STOPPING_THRESHOLD, restore_best_weights=True)
-history = model.fit(train_ds, validation_data=val_ds, epochs=EPOCHS, callbacks=[callback])
+
+def scheduler(epoch, lr):
+    lrate = LEARNING_RATE
+    if epoch > 75:
+        lrate = 0.0005
+    if epoch > 100:
+        lrate = 0.0003
+    return lrate
+
+
+callback = tf.keras.callbacks.EarlyStopping(
+    monitor="val_loss", patience=EARLY_STOPPING_THRESHOLD, restore_best_weights=True
+)
+callback2 = tf.keras.callbacks.LearningRateScheduler(scheduler)
+history = model.fit(
+    train_ds, validation_data=val_ds, epochs=EPOCHS, callbacks=[callback, callback2]
+)
 
 test_loss, test_acc = model.evaluate(test_ds)
-print(f"Accuracy: {test_acc}\tLoss: {test_loss}")
+test_acc_loss = f"Accuracy: {test_acc}\tLoss: {test_loss}\n"
+print(test_acc_loss)
 
-model.save("trained_model")
+filename = os.path.basename(__file__).split(".")[0]
 
-plt.plot(history.history['accuracy'], label='training accuracy')
-plt.plot(history.history['val_accuracy'], label = 'validation accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend(loc='lower right')
-plt.savefig("ModelAccuracy.png")
+model.save(filename + "_trained")
+
+results_dir = filename + "_results/"
+
+if not os.path.isdir(results_dir):
+    os.makedirs(results_dir)
+
+f = open(results_dir + "test_results.txt", "w")
+f.write(test_acc_loss)
+f.close()
+
+plt.plot(history.history["sparse_categorical_accuracy"], label="training accuracy")
+plt.plot(
+    history.history["val_sparse_categorical_accuracy"], label="validation accuracy"
+)
+plt.xlabel("Epoch")
+plt.ylabel("Accuracy")
+plt.legend(loc="lower right")
+plt.savefig(results_dir + "accuracy")
 
 plt.figure()
 
-plt.plot(history.history['loss'], label='training loss')
-plt.plot(history.history['val_loss'], label = 'validation loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend(loc='upper right')
-plt.savefig("ModelLoss.png")
-
-plt.show()
+plt.plot(history.history["loss"], label="training loss")
+plt.plot(history.history["val_loss"], label="validation loss")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.legend(loc="upper right")
+plt.savefig(results_dir + "loss")
