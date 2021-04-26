@@ -16,6 +16,9 @@ images = data.data
 labels = data.target
 class_names = data.target_names
 
+# Controls the randomness of the training and testing indices produced.
+# We fix an integer here instead of using a randomized integer so that we get reproducible training
+# and testing datasets
 RANDOM_STATE = 42
 
 # Creates a Train-Test split where Train is TRAIN_SIZE and Test is TEST_SIZE
