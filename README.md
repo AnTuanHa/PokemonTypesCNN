@@ -6,8 +6,8 @@ We use the datasets provided from Kaggle:
 * [7,000 Labeled Pokemon](https://www.kaggle.com/lantian773030/pokemonclassification)
 * [Pokemon Image Dataset](https://www.kaggle.com/vishalsubbiah/pokemon-images-and-types)
 
-We modified the `pokemon.csv` file from `Pokemon Image Dataset` so that it includes the `Alalon
-Sandslash` Pokemon, as well as renamed the row `mr-mime` to `mrmime`.
+We modified the [pokemon.csv](pokemon.csv) file from `Pokemon Image Dataset` so that it includes the
+`Alalon Sandslash` Pokemon, as well as renamed the row `mr-mime` to `mrmime`.
 
 ## Setup
 
@@ -47,24 +47,34 @@ After training the model, you can run `python confusion_matrix.py` which will ge
 matrix heatmap saved as `confusion_matrix_heatmap.png`
 
 ## Using Our Trained Model
-We have trained and saved our model with an NVIDIA RTX 2080 Ti under the `saved_results` folder. The
-model is saved as `TrainModel_trained`. We have also attached a `TestModel.py` that loads the model
-and tests the performance against the test set. You will need to copy `test_dataset` into this
-folder.
+We have trained and saved our model which has about 78.9% accuracy on the test set with an NVIDIA
+RTX 2080 Ti under the [saved_results](saved_results) folder. The model is saved as
+[TrainModel_trained](saved_results/TrainModel_trained). We have also attached a
+[TestModel.py](saved_results/TestModel.py) that loads the model and tests the performance against
+the test set. You will need to copy `test_dataset` into this folder.
+
+### Training vs Validation Accuracy Graph
+![Training vs Validation Accuracy Graph](saved_results/TrainModel_results/accuracy.png)
+
+### Training vs Validation Loss Graph
+![Training vs Validation Loss Graph](saved_results/TrainModel_results/loss.png)
+
+### Confusion Matrix Heatmap
+![Confusion Matrix Heatmap](saved_results/confusion_matrix_heatmap.png)
 
 ## Report
 We have attached our report to the repository with our findings and discussion saved as
 [report.pdf](report.pdf) in the project root directory.
 
 ### Notes
-The `saved_results` folder contains the trained architecture and weights of our best performing
-model. The directory `test_dataset` contains a random sample of 15% of the images from our original
-dataset. It contains one subdirectory for each Pokemon type. Each subdirectory contains images of
-Pokemon of that type. For example, all Pokemon in `test_dataset/Water` are `Water` types. Thus, the
-subdirectory's name is the label for all the images it contains. The python script `TestModel.py`
-contains code for loading the saved model and evaluating it on `test_dataset`, outputting accuracy
-and loss. It requires an environment with the modules listed under the `Setup` section. Also make
-sure to follow the `Prepare Data` section above.
+The [saved_results](saved_results) folder contains the trained architecture and weights of our best
+performing model. The directory `test_dataset` contains a random sample of 15% of the images from
+our original dataset. It contains one subdirectory for each Pokemon type. Each subdirectory contains
+images of Pokemon of that type. For example, all Pokemon in `test_dataset/Water` are `Water` types.
+Thus, the subdirectory's name is the label for all the images it contains. The python script
+`TestModel.py` contains code for loading the saved model and evaluating it on `test_dataset`,
+outputting accuracy and loss. It requires an environment with the modules listed under the `Setup`
+section. Also make sure to follow the `Prepare Data` section above.
 
 ```bash
 # NOTE: test_dataset should be generated with RANDOM_STATE=42 when running
