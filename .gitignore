@@ -130,3 +130,5 @@ dmypy.json
 
 PokemonData
 dataset
+train_dataset
+test_dataset
