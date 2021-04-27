@@ -9,6 +9,12 @@ We use the datasets provided from Kaggle:
 We modified the [pokemon.csv](pokemon.csv) file from `Pokemon Image Dataset` so that it includes the
 `Alalon Sandslash` Pokemon, as well as renamed the row `mr-mime` to `mrmime`.
 
+## Demo
+Our trained model can be used and available online [here](https://antuanha.github.io/PokemonTypesCNN/).
+
+### Example
+![Example prediction of our trained model](screenshots/example.png)
+
 ## Setup
 
 1. Install `python 3.8.8`
